@@ -1,0 +1,1 @@
+FOR THE FRONTEND GUIDE, GUIDE ON HOW WE STORE USER DATA AND SHI. also on getting feedback for the adaptive improvement feature in the UI

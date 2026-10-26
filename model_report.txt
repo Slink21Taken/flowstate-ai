@@ -1,0 +1,27 @@
+FlowState AI — Effort Prediction Model Report
+==================================================
+
+Training rows: 70000
+Validation rows: 15000
+Test rows: 15000
+
+Test MAE: 24.61 minutes
+Test MAPE: 28.91%
+Test R²: 0.368
+
+Naive per-type-mean baseline MAE: 31.42 minutes
+Naive per-type-mean baseline MAPE: 43.10%
+Naive per-type-mean baseline R²: 0.175
+
+Model improvement over baseline: 21.7% (MAE)
+
+Feature importance:
+                 feature  importance
+               task_type   27.951459
+         base_difficulty   27.866223
+      difficulty_squared   27.423376
+          in_peak_window   15.284351
+deadline_hours_remaining    0.545769
+      log_deadline_hours    0.430380
+               is_crunch    0.321769
+              is_far_out    0.176673

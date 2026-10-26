@@ -1,0 +1,39 @@
+FlowState AI — Schedule Feasibility Classifier Report
+=======================================================
+
+Model: LogisticRegression (C=0.01, class_weight='balanced')
+Decision threshold: flag as at-risk when P(infeasible) >= 0.524 (chosen by maximizing infeasible-class F1 on the validation set)
+Training rows: 42000
+Validation rows: 9000
+Test rows: 9000
+
+Test Accuracy: 0.731 (naive baseline: 0.818)
+Test ROC AUC: 0.766 (threshold-independent; naive baseline: 0.500)
+Test Log loss: 0.576 (naive baseline: 0.474)
+Test Brier score: 0.194
+
+Infeasible-class metrics (the class this model exists to catch):
+  Precision: 0.365
+  Recall: 0.656
+  F1: 0.469
+
+Design note: optimized for infeasible-class recall over raw accuracy, since a missed
+'this schedule is unrealistic' warning is more costly than a false alarm. An earlier
+version of this script used accuracy + a default 0.5 threshold and caught only ~13-18%
+of genuinely infeasible schedules; this version explicitly tunes the threshold against
+that failure.
+
+Feature importance (standardized coefficients):
+                             feature  coefficient
+                          load_ratio    -0.667971
+             historical_on_time_rate     0.407423
+               recent_slippage_trend    -0.299798
+               concurrent_task_count    -0.062270
+             total_predicted_minutes    -0.049225
+                             n_tasks     0.041573
+             peak_window_match_ratio     0.017353
+available_hours_to_earliest_deadline    -0.014506
+                n_completion_history    -0.007739
+
+Note: trained on fully synthetic data (see generate_feasibility_data.py).
+Disclose this openly in the pitch -- Responsible AI rubric point, not a weakness.

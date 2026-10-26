@@ -1,0 +1,1021 @@
+{
+  "u1": {
+    "essay": {
+      "factor": 2.5,
+      "n_samples": 1,
+      "last_updated": "2026-10-24T17:50:20.277814+00:00"
+    }
+  },
+  "u_8ce336a265": {
+    "essay": {
+      "factor": 1.075,
+      "n_samples": 1,
+      "last_updated": "2026-10-24T17:50:20.280484+00:00"
+    }
+  },
+  "u_90ade87982": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-24T17:50:20.282870+00:00"
+    }
+  },
+  "u_2313bd6d66": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-24T17:50:20.285386+00:00"
+    }
+  },
+  "u_960bcbfa97": {
+    "essay": {
+      "factor": 1.6569999999999996,
+      "n_samples": 3,
+      "last_updated": "2026-10-24T17:50:20.290480+00:00"
+    }
+  },
+  "u_aabcf569a4": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 15,
+      "last_updated": "2026-10-24T17:50:20.314338+00:00"
+    }
+  },
+  "u_ce19534b27": {
+    "coding": {
+      "factor": 0.4,
+      "n_samples": 15,
+      "last_updated": "2026-10-24T17:50:20.337670+00:00"
+    }
+  },
+  "u_edbfb9d23e": {
+    "coding": {
+      "factor": 1.9992020773370234,
+      "n_samples": 20,
+      "last_updated": "2026-10-24T17:50:20.367176+00:00"
+    }
+  },
+  "u_32cd539537": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-24T17:50:20.427891+00:00"
+    },
+    "essay": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-24T17:50:20.429485+00:00"
+    }
+  },
+  "a_b2ce23acb7": {
+    "math": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-24T17:50:20.438129+00:00"
+    }
+  },
+  "b_fdba0988de": {
+    "math": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-24T17:50:20.439561+00:00"
+    }
+  },
+  "u_6d81f6507a": {
+    "math": {
+      "factor": 1.255,
+      "n_samples": 2,
+      "last_updated": "2026-10-24T17:50:20.443439+00:00"
+    }
+  },
+  "race_1f74bd2fdf": {
+    "reading": {
+      "factor": 1.3239174916999996,
+      "n_samples": 10,
+      "last_updated": "2026-10-24T17:50:20.455271+00:00"
+    }
+  },
+  "u_e98e91b99c": {
+    "essay": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.434965+00:00"
+    }
+  },
+  "u_4aea952fc8": {
+    "essay": {
+      "factor": 2.5,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.623398+00:00"
+    }
+  },
+  "u_b864b18c4e": {
+    "essay": {
+      "factor": 1.075,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.626031+00:00"
+    }
+  },
+  "u_8a6433f4d1": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.628194+00:00"
+    }
+  },
+  "u_c9ba88779d": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.630635+00:00"
+    }
+  },
+  "u_880af9e024": {
+    "essay": {
+      "factor": 1.6569999999999996,
+      "n_samples": 3,
+      "last_updated": "2026-10-25T06:38:51.636267+00:00"
+    }
+  },
+  "u_61faae37bb": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T06:38:51.664815+00:00"
+    }
+  },
+  "u_4ee0c92a8c": {
+    "coding": {
+      "factor": 0.4,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T06:38:51.688023+00:00"
+    }
+  },
+  "u_11a6961748": {
+    "coding": {
+      "factor": 1.9992020773370234,
+      "n_samples": 20,
+      "last_updated": "2026-10-25T06:38:51.722156+00:00"
+    }
+  },
+  "u_dc60e18124": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T06:38:51.731252+00:00"
+    },
+    "essay": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.732758+00:00"
+    }
+  },
+  "a_6d76ae66d5": {
+    "math": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T06:38:51.741359+00:00"
+    }
+  },
+  "b_a55804a440": {
+    "math": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.742942+00:00"
+    }
+  },
+  "u_18ef230555": {
+    "math": {
+      "factor": 1.255,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T06:38:51.746778+00:00"
+    }
+  },
+  "u_6bea9b22fc": {
+    "coding": {
+      "factor": 1.5099999999999998,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T06:38:51.760098+00:00"
+    },
+    "essay": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.751499+00:00"
+    },
+    "reading": {
+      "factor": 1.24,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.753990+00:00"
+    },
+    "math": {
+      "factor": 0.8799999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.756210+00:00"
+    },
+    "creative": {
+      "factor": 1.06,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:51.758245+00:00"
+    }
+  },
+  "race_ec83ff74d6": {
+    "reading": {
+      "factor": 1.3239174916999996,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T06:38:51.800196+00:00"
+    }
+  },
+  "u_50b90c69cf": {
+    "math": {
+      "factor": 1.0899999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:53.937903+00:00"
+    }
+  },
+  "u_5f78760f2e": {
+    "reading": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:53.975901+00:00"
+    }
+  },
+  "u_9ae747502b": {
+    "coding": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T06:38:54.051301+00:00"
+    }
+  },
+  "u_ec976d1337": {
+    "essay": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.462862+00:00"
+    }
+  },
+  "u_dbea7584eb": {
+    "essay": {
+      "factor": 2.5,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.618259+00:00"
+    }
+  },
+  "u_9bc20d31dc": {
+    "essay": {
+      "factor": 1.075,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.620534+00:00"
+    }
+  },
+  "u_3d073731f4": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.622677+00:00"
+    }
+  },
+  "u_1e2ec163cf": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.624954+00:00"
+    }
+  },
+  "u_6fd3f97985": {
+    "essay": {
+      "factor": 1.6569999999999996,
+      "n_samples": 3,
+      "last_updated": "2026-10-25T07:10:29.630634+00:00"
+    }
+  },
+  "u_fef23c006e": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:10:29.655893+00:00"
+    }
+  },
+  "u_65b62bb375": {
+    "coding": {
+      "factor": 0.4,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:10:29.683625+00:00"
+    }
+  },
+  "u_fab7e3b31d": {
+    "coding": {
+      "factor": 1.9992020773370234,
+      "n_samples": 20,
+      "last_updated": "2026-10-25T07:10:29.719106+00:00"
+    }
+  },
+  "u_cf6fc8e977": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:10:29.729237+00:00"
+    },
+    "essay": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.730807+00:00"
+    }
+  },
+  "a_10a90b1a0d": {
+    "math": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:10:29.740064+00:00"
+    }
+  },
+  "b_1f3fd0d34b": {
+    "math": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.741893+00:00"
+    }
+  },
+  "u_dbd714514d": {
+    "math": {
+      "factor": 1.255,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:10:29.746078+00:00"
+    }
+  },
+  "u_34acd82674": {
+    "coding": {
+      "factor": 1.5099999999999998,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:10:29.756984+00:00"
+    },
+    "essay": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.750175+00:00"
+    },
+    "reading": {
+      "factor": 1.24,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.751898+00:00"
+    },
+    "math": {
+      "factor": 0.8799999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.753554+00:00"
+    },
+    "creative": {
+      "factor": 1.06,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:29.755068+00:00"
+    }
+  },
+  "race_ed5cf5657e": {
+    "reading": {
+      "factor": 1.3239174916999996,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:10:29.792737+00:00"
+    }
+  },
+  "improves_5933cb4a09": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:10:30.674430+00:00"
+    }
+  },
+  "u_219dff5dc8": {
+    "math": {
+      "factor": 1.0899999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:30.738872+00:00"
+    }
+  },
+  "u_da8d3eff23": {
+    "reading": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:30.747909+00:00"
+    }
+  },
+  "u_dc96c3bd89": {
+    "coding": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:30.755428+00:00"
+    }
+  },
+  "u_20e6d0927f": {
+    "coding": {
+      "factor": 0.8799999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:30.761694+00:00"
+    }
+  },
+  "u_0c2703c431": {
+    "coding": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:30.767498+00:00"
+    }
+  },
+  "u_c939683f50": {
+    "coding": {
+      "factor": 0.8799999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:10:30.773442+00:00"
+    }
+  },
+  "u_8cbbf391e4": {
+    "essay": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.640317+00:00"
+    }
+  },
+  "u_4504e57ac5": {
+    "essay": {
+      "factor": 2.5,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.820161+00:00"
+    }
+  },
+  "u_cc86d1e085": {
+    "essay": {
+      "factor": 1.075,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.822947+00:00"
+    }
+  },
+  "u_53464ee4af": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.825477+00:00"
+    }
+  },
+  "u_ce65e573f3": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.827843+00:00"
+    }
+  },
+  "u_ae003a2792": {
+    "essay": {
+      "factor": 1.6569999999999996,
+      "n_samples": 3,
+      "last_updated": "2026-10-25T07:34:58.834162+00:00"
+    }
+  },
+  "u_8976b20872": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:34:58.863680+00:00"
+    }
+  },
+  "u_e9578aee90": {
+    "coding": {
+      "factor": 0.4,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:34:58.892906+00:00"
+    }
+  },
+  "u_9236df11de": {
+    "coding": {
+      "factor": 1.9992020773370234,
+      "n_samples": 20,
+      "last_updated": "2026-10-25T07:34:58.932612+00:00"
+    }
+  },
+  "u_888a97b982": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:34:58.943201+00:00"
+    },
+    "essay": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.945696+00:00"
+    }
+  },
+  "a_3bc6ae4650": {
+    "math": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:34:58.957356+00:00"
+    }
+  },
+  "b_a5e4cbacd5": {
+    "math": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.959951+00:00"
+    }
+  },
+  "u_08ea20fc43": {
+    "math": {
+      "factor": 1.255,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:34:58.964522+00:00"
+    }
+  },
+  "u_881044491d": {
+    "coding": {
+      "factor": 1.5099999999999998,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:34:58.977630+00:00"
+    },
+    "essay": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.968918+00:00"
+    },
+    "reading": {
+      "factor": 1.24,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.970680+00:00"
+    },
+    "math": {
+      "factor": 0.8799999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.973242+00:00"
+    },
+    "creative": {
+      "factor": 1.06,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:34:58.975611+00:00"
+    }
+  },
+  "race_3026148dc6": {
+    "reading": {
+      "factor": 1.3239174916999996,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:34:59.018414+00:00"
+    }
+  },
+  "improves_740993d20e": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:35:00.010769+00:00"
+    }
+  },
+  "u_a318dda08b": {
+    "math": {
+      "factor": 1.0899999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:35:00.073357+00:00"
+    }
+  },
+  "u_73198527b8": {
+    "reading": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:35:00.081985+00:00"
+    }
+  },
+  "u_36c66767f1": {
+    "coding": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:35:00.090374+00:00"
+    }
+  },
+  "u_e1db9a1232": {
+    "essay": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:04.851567+00:00"
+    }
+  },
+  "u_45861f20fc": {
+    "essay": {
+      "factor": 2.5,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:04.874126+00:00"
+    }
+  },
+  "u_cf2127e921": {
+    "essay": {
+      "factor": 1.075,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:04.880721+00:00"
+    }
+  },
+  "u_75f3ef9c45": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:04.885704+00:00"
+    }
+  },
+  "u_4f92a44daf": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:04.891749+00:00"
+    }
+  },
+  "u_a5337a88ba": {
+    "essay": {
+      "factor": 1.6569999999999996,
+      "n_samples": 3,
+      "last_updated": "2026-10-25T07:46:04.903681+00:00"
+    }
+  },
+  "u_8708333bfa": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:46:04.957193+00:00"
+    }
+  },
+  "u_d76d962b4e": {
+    "coding": {
+      "factor": 0.4,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:46:05.008199+00:00"
+    }
+  },
+  "u_66e61835e8": {
+    "coding": {
+      "factor": 1.9992020773370234,
+      "n_samples": 20,
+      "last_updated": "2026-10-25T07:46:05.073406+00:00"
+    }
+  },
+  "u_8d5eb45973": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:46:05.090258+00:00"
+    },
+    "essay": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:05.094345+00:00"
+    }
+  },
+  "a_bbb955f19c": {
+    "math": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:46:05.111682+00:00"
+    }
+  },
+  "b_c0f76dcbed": {
+    "math": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:05.114067+00:00"
+    }
+  },
+  "u_1cc782067e": {
+    "math": {
+      "factor": 1.255,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:46:05.120443+00:00"
+    }
+  },
+  "u_90bd5d00e5": {
+    "coding": {
+      "factor": 1.5099999999999998,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:46:05.143968+00:00"
+    },
+    "essay": {
+      "factor": 0.745,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:46:05.146662+00:00"
+    },
+    "reading": {
+      "factor": 1.408,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:46:05.149377+00:00"
+    },
+    "math": {
+      "factor": 0.7959999999999998,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:46:05.152784+00:00"
+    },
+    "creative": {
+      "factor": 1.1019999999999999,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:46:05.156859+00:00"
+    }
+  },
+  "race_a6255763d8": {
+    "reading": {
+      "factor": 1.3239174916999996,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:46:05.181695+00:00"
+    }
+  },
+  "u_f8a46a0ea2": {
+    "math": {
+      "factor": 1.0899999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:06.667053+00:00"
+    }
+  },
+  "u_19fa119371": {
+    "reading": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:06.712901+00:00"
+    }
+  },
+  "u_f830fc7a80": {
+    "coding": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:46:06.755181+00:00"
+    }
+  },
+  "u_2a7efda463": {
+    "essay": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:17.667712+00:00"
+    }
+  },
+  "u_f1a3a7663a": {
+    "essay": {
+      "factor": 2.5,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:17.685477+00:00"
+    }
+  },
+  "u_138050aa0d": {
+    "essay": {
+      "factor": 1.075,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:17.688530+00:00"
+    }
+  },
+  "u_451d629102": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:17.691632+00:00"
+    }
+  },
+  "u_23b9259684": {
+    "essay": {
+      "factor": 1.2999999999999998,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:17.695397+00:00"
+    }
+  },
+  "u_72470f5f40": {
+    "essay": {
+      "factor": 1.6569999999999996,
+      "n_samples": 3,
+      "last_updated": "2026-10-25T07:49:17.703310+00:00"
+    }
+  },
+  "u_d43a72af09": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:49:17.740782+00:00"
+    }
+  },
+  "u_5c6da30807": {
+    "coding": {
+      "factor": 0.4,
+      "n_samples": 15,
+      "last_updated": "2026-10-25T07:49:17.776640+00:00"
+    }
+  },
+  "u_705d733d74": {
+    "coding": {
+      "factor": 1.9992020773370234,
+      "n_samples": 20,
+      "last_updated": "2026-10-25T07:49:17.828926+00:00"
+    }
+  },
+  "u_5e72842a33": {
+    "coding": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:49:17.842533+00:00"
+    },
+    "essay": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:17.845045+00:00"
+    }
+  },
+  "a_56e976f237": {
+    "math": {
+      "factor": 2.5,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:49:17.858038+00:00"
+    }
+  },
+  "b_f59de51d9a": {
+    "math": {
+      "factor": 1.005,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:17.861181+00:00"
+    }
+  },
+  "u_7e22829b10": {
+    "math": {
+      "factor": 1.255,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:49:17.867719+00:00"
+    }
+  },
+  "u_d0d8fab130": {
+    "coding": {
+      "factor": 1.5099999999999998,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:49:17.887757+00:00"
+    },
+    "essay": {
+      "factor": 0.745,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:49:17.890210+00:00"
+    },
+    "reading": {
+      "factor": 1.408,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:49:17.892836+00:00"
+    },
+    "math": {
+      "factor": 0.7959999999999998,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:49:17.895596+00:00"
+    },
+    "creative": {
+      "factor": 1.1019999999999999,
+      "n_samples": 2,
+      "last_updated": "2026-10-25T07:49:17.897978+00:00"
+    }
+  },
+  "race_6791302698": {
+    "reading": {
+      "factor": 1.3239174916999996,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:49:17.915903+00:00"
+    }
+  },
+  "improves_c2f255509c": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:49:18.912135+00:00"
+    }
+  },
+  "u_df4f879c17": {
+    "math": {
+      "factor": 1.0899999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:18.985920+00:00"
+    }
+  },
+  "u_a0b77ee8db": {
+    "reading": {
+      "factor": 0.85,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:18.994069+00:00"
+    }
+  },
+  "u_e3aeba24dc": {
+    "coding": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:19.002253+00:00"
+    }
+  },
+  "u_ca9f396269": {
+    "coding": {
+      "factor": 0.8799999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:19.010588+00:00"
+    }
+  },
+  "u_0ecc86c450": {
+    "coding": {
+      "factor": 1.15,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:19.019161+00:00"
+    }
+  },
+  "u_1a00b9dc91": {
+    "coding": {
+      "factor": 0.8799999999999999,
+      "n_samples": 1,
+      "last_updated": "2026-10-25T07:49:19.028022+00:00"
+    }
+  },
+  "chart_reliable_1792915133": {
+    "essay": {
+      "factor": 1.0201188089541797,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:58:53.317165+00:00"
+    }
+  },
+  "chart_late_1792915133": {
+    "essay": {
+      "factor": 1.5099986423199292,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:58:53.319588+00:00"
+    }
+  },
+  "chart_demo_1792915133": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:58:54.130182+00:00"
+    }
+  },
+  "chart_reliable_1792915179": {
+    "essay": {
+      "factor": 0.9904908529980763,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:59:39.335721+00:00"
+    }
+  },
+  "chart_late_1792915179": {
+    "essay": {
+      "factor": 1.4763022967260826,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T07:59:39.338412+00:00"
+    }
+  },
+  "chart_demo_1792915179": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T07:59:40.204844+00:00"
+    }
+  },
+  "chart_reliable_1792915551": {
+    "essay": {
+      "factor": 0.9819583347414715,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T08:05:51.920070+00:00"
+    }
+  },
+  "chart_late_1792915551": {
+    "essay": {
+      "factor": 1.478209098480668,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T08:05:51.922545+00:00"
+    }
+  },
+  "chart_demo_1792915552": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T08:05:52.690827+00:00"
+    }
+  },
+  "chart_reliable_1792915614": {
+    "essay": {
+      "factor": 0.9932196875543109,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T08:06:54.625077+00:00"
+    }
+  },
+  "chart_late_1792915614": {
+    "essay": {
+      "factor": 1.4661947545163592,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T08:06:54.627194+00:00"
+    }
+  },
+  "chart_demo_1792915614": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T08:06:55.391087+00:00"
+    }
+  },
+  "chart_reliable_1792916167": {
+    "essay": {
+      "factor": 1.002667045266624,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T08:16:07.360072+00:00"
+    }
+  },
+  "chart_late_1792916167": {
+    "essay": {
+      "factor": 1.4806854512873115,
+      "n_samples": 10,
+      "last_updated": "2026-10-25T08:16:07.362468+00:00"
+    }
+  },
+  "chart_demo_1792916167": {
+    "coding": {
+      "factor": 1.0,
+      "n_samples": 5,
+      "last_updated": "2026-10-25T08:16:08.176105+00:00"
+    }
+  }
+}

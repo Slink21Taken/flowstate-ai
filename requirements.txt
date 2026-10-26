@@ -1,0 +1,19 @@
+# FlowState AI — Python dependencies
+# Install: pip install -r requirements.txt
+#
+# Covers the full project:
+#   - app.py, pipeline.py, scheduler.py, parse_tasks.py  -> the API/server
+#   - generate_data.py, train_model.py                   -> data gen + training (not
+#                                                            needed just to RUN the API)
+#
+# Versions pinned to what was actually built/tested against. If you need
+# to bump one, re-run train_model.py and the app.py smoke tests after
+# (catboost in particular can shift tree output slightly across versions).
+
+flask==3.1.3
+catboost==1.2.10
+groq==1.7.0
+pandas==3.0.2
+numpy==2.4.4
+scikit-learn==1.8.0
+flask-cors
