@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 // --- CONFIG & UTILS ---
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'https://flowstate-ai-p5pm.onrender.com';
 const STORAGE_KEY = 'flowstate_session';
 
 function cn(...classes) {
