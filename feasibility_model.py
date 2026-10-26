@@ -183,7 +183,7 @@ def predict_feasibility(schedule_result: dict, user_id: str, now: Optional[_dt.d
 
     Returns: {"completion_probability": float, "risk_flagged_task_id": str | None}
     """
-    now = now or _dt.datetime.now()
+    now = now or _dt.datetime.now(_dt.timezone.utc)
 
     features = _extract_features(schedule_result, user_id, now)
     # DataFrame with named columns -- scaler/model were fit on FEATURE_COLS
