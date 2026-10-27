@@ -251,9 +251,13 @@ def schedule_generate():
         return error_response(str(e))
 
     # --- Stage 5: feasibility (additive -- never fails the whole request) ---
+    # --- Stage 5: feasibility (additive -- never fails the whole request) ---
     try:
         schedule_result["feasibility"] = predict_feasibility(
-            schedule_result, user_id=user_id, now=now
+            schedule_result,
+            user_id=user_id,
+            now=now,
+            task_deadlines={t["task_id"]: t["deadline"] for t in parsed},  # <-- added
         )
     except Exception as e:
         # Deliberately broad: ANY feasibility-model failure (missing

@@ -103,10 +103,21 @@ def _historical_stats_from_store(
     return historical_on_time_rate, recent_slippage_trend, total_samples
 
 
-def _extract_features(schedule_result: dict, user_id: str, now: _dt.datetime) -> dict:
+def _extract_features(
+    schedule_result: dict,
+    user_id: str,
+    now: _dt.datetime,
+    task_deadlines: Optional[dict] = None,
+) -> dict:
     """
     schedule_result is exactly what generate_schedule() / the
     /api/schedule/generate endpoint returns: {"task_analysis": [...], "schedule": [...]}.
+
+    task_deadlines, when provided, maps task_id -> the original request
+    deadline (tz-aware datetime). Preferred source for anything deadline-
+    derived below; buffer_deadline is used only as a fallback for callers
+    that don't pass task_deadlines (e.g. older presets re-run through
+    this function without the original request alongside them).
     """
     task_analysis = schedule_result["task_analysis"]
     if not task_analysis:
@@ -115,24 +126,27 @@ def _extract_features(schedule_result: dict, user_id: str, now: _dt.datetime) ->
     store = _get_correction_store()
 
     total_predicted_minutes = sum(t["predicted_duration_minutes"] for t in task_analysis)
-    deadlines = [_dt.datetime.fromisoformat(t["buffer_deadline"]) for t in task_analysis]
-    earliest_buffer = min(deadlines)
-    available_hours = max((earliest_buffer - now).total_seconds() / 3600, 0.5)
+
+    def _deadline_for(t: dict) -> _dt.datetime:
+        if task_deadlines is not None and t["task_id"] in task_deadlines:
+            return task_deadlines[t["task_id"]]
+        # Fallback: pre-patch behavior, kept so this still works for any
+        # caller that hasn't been updated to pass task_deadlines yet.
+        return _dt.datetime.fromisoformat(t["buffer_deadline"])
+
+    deadlines = [_deadline_for(t) for t in task_analysis]
+    earliest_deadline = min(deadlines)
+    available_hours = max((earliest_deadline - now).total_seconds() / 3600, 0.5)
     load_ratio = (total_predicted_minutes / 60) / available_hours
 
     concurrent_task_count = sum(
-        1 for bd in deadlines if bd <= earliest_buffer + _dt.timedelta(hours=12)
+        1 for dl in deadlines if dl <= earliest_deadline + _dt.timedelta(hours=12)
     )
 
     # Same >=4h-runway proxy as app.py's estimate_in_peak_window() /
-    # the generator -- kept identical rather than reinvented.
-    in_peak_flags = []
-    for t, bd in zip(task_analysis, deadlines):
-        # task_analysis doesn't carry the raw deadline, only buffer_deadline;
-        # approximate original deadline runway from buffer_deadline, which
-        # is close enough for this coarse flag (buffer is only 15% of the window).
-        hours_remaining = (bd - now).total_seconds() / 3600
-        in_peak_flags.append(1 if hours_remaining >= 4 else 0)
+    # the generator -- kept identical rather than reinvented. Now computed
+    # against the real deadline instead of approximating from buffer_deadline.
+    in_peak_flags = [1 if (dl - now).total_seconds() / 3600 >= 4 else 0 for dl in deadlines]
     peak_window_match_ratio = float(np.mean(in_peak_flags))
 
     task_types = [t["task_type"] for t in task_analysis]
@@ -152,44 +166,56 @@ def _extract_features(schedule_result: dict, user_id: str, now: _dt.datetime) ->
         "n_completion_history": n_completion_history,
     }
 
-
 # ---------------------------------------------------------------------------
 # risk_flagged_task_id — simplest version per the TODO spec: the task
 # with the least slack (buffer_deadline vs. predicted duration), i.e.
 # the one most likely to be the actual bottleneck.
 # ---------------------------------------------------------------------------
 
-def _identify_risk_flagged_task(task_analysis: list[dict], now: _dt.datetime) -> Optional[str]:
+def _identify_risk_flagged_task(
+    task_analysis: list[dict],
+    now: _dt.datetime,
+    task_deadlines: Optional[dict] = None,
+) -> Optional[str]:
     if not task_analysis:
         return None
 
     def slack_ratio(t: dict) -> float:
-        buffer_deadline = _dt.datetime.fromisoformat(t["buffer_deadline"])
-        hours_to_buffer = max((buffer_deadline - now).total_seconds() / 3600, 0.01)
-        return hours_to_buffer / max(t["predicted_duration_minutes"] / 60, 0.01)
+        if task_deadlines is not None and t["task_id"] in task_deadlines:
+            deadline = task_deadlines[t["task_id"]]
+        else:
+            deadline = _dt.datetime.fromisoformat(t["buffer_deadline"])
+        hours_to_deadline = max((deadline - now).total_seconds() / 3600, 0.01)
+        return hours_to_deadline / max(t["predicted_duration_minutes"] / 60, 0.01)
 
     return min(task_analysis, key=slack_ratio)["task_id"]
-
-
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def predict_feasibility(schedule_result: dict, user_id: str, now: Optional[_dt.datetime] = None) -> dict:
+def predict_feasibility(
+    schedule_result: dict,
+    user_id: str,
+    now: Optional[_dt.datetime] = None,
+    task_deadlines: Optional[dict] = None,
+) -> dict:
     """
     Stage 5: call this from /api/schedule/generate's handler, right after
     generate_schedule() succeeds, same pattern as analyze_task() is
     called per-task in Stage 1+2.
 
+    task_deadlines, when provided, maps task_id -> the original
+    (already tz-aware) deadline datetime from the request, i.e. app.py's
+    `parsed` list keyed by task_id. This is the real deadline the user
+    gave us -- preferred over reconstructing one from buffer_deadline,
+    which is a scheduling artifact (buffer_deadline is offset earlier
+    by design, see scheduler.py), not the source of truth.
+
     Returns: {"completion_probability": float, "risk_flagged_task_id": str | None}
     """
     now = now or _dt.datetime.now(_dt.timezone.utc)
 
-    features = _extract_features(schedule_result, user_id, now)
-    # DataFrame with named columns -- scaler/model were fit on FEATURE_COLS
-    # by name (same discipline as pipeline.py's _build_feature_row()), so
-    # this avoids a sklearn "X does not have valid feature names" warning
-    # and keeps column order unambiguous regardless of dict ordering.
+    features = _extract_features(schedule_result, user_id, now, task_deadlines)
     row = pd.DataFrame([features], columns=FEATURE_COLS)
 
     scaler = _get_scaler()
@@ -203,7 +229,9 @@ def predict_feasibility(schedule_result: dict, user_id: str, now: Optional[_dt.d
     is_at_risk = p_infeasible >= threshold
 
     risk_flagged_task_id = (
-        _identify_risk_flagged_task(schedule_result["task_analysis"], now) if is_at_risk else None
+        _identify_risk_flagged_task(schedule_result["task_analysis"], now, task_deadlines)
+        if is_at_risk
+        else None
     )
 
     return {
