@@ -80,6 +80,12 @@ function trialGenerateSyntheticCompletion(taskType) {
   return { predicted, actual: Math.max(actual, 1) };
 }
 
+function recoverRawFactor(effectiveFactor, nSamples) {
+  if (nSamples === 0) return 1.0;
+  const trust = Math.min(nSamples / MIN_SAMPLES_FOR_FULL_TRUST, 1.0);
+  return (effectiveFactor - (1 - trust)) / trust;
+}
+
 const DEFAULT_RAW_TEXT = `History Essay - Read Ch. 4 (30 pgs) and write 3-page summary due Friday at 11:59pm.
 Math Problem Set 5 - Exercises 1-12 on page 140, due tomorrow 11:59pm.
 Physics Lab Report - Review guidelines and write intro section, due next Monday.
@@ -682,9 +688,10 @@ export default function App() {
     }
 
     // Mock Feedback Loop Update
-    const ratio = actual / (predicted_duration_minutes || 60);
-    const newFactor = parseFloat((prevFactorObj.factor * 0.7 + ratio * 0.3).toFixed(2));
+    const prevRaw = recoverRawFactor(prevFactorObj.factor, prevFactorObj.n_samples);
+    const newRaw = trialUpdateRawFactor(prevRaw, predicted_duration_minutes || 60, actual);
     const newSamples = prevFactorObj.n_samples + 1;
+    const newFactor = parseFloat(trialEffectiveFactor(newRaw, newSamples).toFixed(2));
 
     updateFactorsState(task_type, prevFactorObj.factor, newFactor, newSamples, task_id);
     setCompletingTask(null);
