@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileText, Camera, RefreshCw,
   Trash2, ShieldAlert, Info, ArrowRight,
@@ -7,13 +7,77 @@ import {
   Target, Layers, HelpCircle, Activity,
   Sliders, Bug, FileCheck
 } from 'lucide-react';
-
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer } from 'recharts';
 // --- CONFIG & UTILS ---
 const API_BASE = 'https://flowstate-ai-p5pm.onrender.com';
 const STORAGE_KEY = 'flowstate_session';
+const EMA_ALPHA = 0.3;
+const FACTOR_MIN = 0.4;
+const FACTOR_MAX = 2.5;
+const MIN_SAMPLES_FOR_FULL_TRUST = 3;
 
 function cn(...classes) {
   return classes.filter(Boolean).join(' ');
+}
+const TRIAL_TRUE_FACTORS = {
+  essay: 1.45,
+  math: 0.78,
+  reading: 1.10,
+  coding: 1.60,
+  creative: 0.95,
+};
+
+const TRIAL_TASK_TYPES = ['essay', 'math', 'reading', 'coding', 'creative'];
+
+// Distinct colors per task type, reused for both chart lines and their
+// dashed ReferenceLine targets so a judge can visually pair them at a glance.
+const TRIAL_TYPE_COLORS = {
+  essay: '#2B5BA6',
+  math: '#3D6B4A',
+  reading: '#B5491F',
+  coding: '#8B5CF6',
+  creative: '#D97706',
+};
+
+const TRIAL_DEFAULT_ITERATIONS = 20;
+const TRIAL_STEP_DELAY_MS = 220; // pacing between iterations when animating
+
+
+
+function trialUpdateRawFactor(oldRawFactor, predictedMinutes, actualMinutes) {
+  const observedRatio = actualMinutes / predictedMinutes;
+  const newFactor = oldRawFactor * (1 - EMA_ALPHA) + observedRatio * EMA_ALPHA;
+  return Math.min(Math.max(newFactor, FACTOR_MIN), FACTOR_MAX);
+}
+
+/**
+ * Trust-blends a raw factor toward 1.0 based on sample count. Mirrors
+ * CorrectionFactorStore.effective_factor() in pipeline.py exactly — this is
+ * the number that should actually be charted and displayed, since it's what
+ * the backend returns as the "effective" prediction-time correction.
+ */
+function trialEffectiveFactor(rawFactor, nSamples) {
+  if (nSamples === 0) return 1.0;
+  const trust = Math.min(nSamples / MIN_SAMPLES_FOR_FULL_TRUST, 1.0);
+  return 1.0 * (1 - trust) + rawFactor * trust;
+}/**
+ * Generates one synthetic task's predicted/actual pair for a given task type,
+ * using the "best" synthesis option from the design doc: actual is drawn from
+ * the predicted duration times a FIXED secret true factor for that type, plus
+ * small noise — so the chart's convergence is a real demonstration of the
+ * factor learning toward something, not just numbers wiggling.
+ */
+function trialGenerateSyntheticCompletion(taskType) {
+  // Same population-baseline heuristic already used in the mock scheduler
+  // fallback (handleGenerateSchedule): difficulty(1-10) * 15 minutes.
+  const difficulty = 1 + Math.floor(Math.random() * 10);
+  const predicted = difficulty * 15;
+
+  const trueFactor = TRIAL_TRUE_FACTORS[taskType];
+  const noise = 1 + (Math.random() - 0.5) * 0.2; // +/- 10%
+  const actual = Math.round(predicted * trueFactor * noise);
+
+  return { predicted, actual: Math.max(actual, 1) };
 }
 
 const DEFAULT_RAW_TEXT = `History Essay - Read Ch. 4 (30 pgs) and write 3-page summary due Friday at 11:59pm.
@@ -28,6 +92,33 @@ const DEFAULT_USER_FACTORS = {
   coding: { factor: 1.25, n_samples: 2, label: "Coding & Projects" },
   creative: { factor: 1.00, n_samples: 0, label: "Creative & Design" },
 };
+
+function buildChartData(trialLog) {
+  if (trialLog.length === 0) return [];
+
+  const maxIteration = trialLog[trialLog.length - 1].iteration;
+  const latestByType = {};
+  TRIAL_TASK_TYPES.forEach((t) => { latestByType[t] = 1.0; }); // all start at factor 1.0
+
+  const byIterationIndex = {};
+  trialLog.forEach((entry) => {
+    byIterationIndex[entry.iteration] = entry;
+  });
+
+  const rows = [];
+  for (let i = 1; i <= maxIteration; i++) {
+    const entry = byIterationIndex[i];
+    if (entry) {
+      latestByType[entry.task_type] = entry.new_factor;
+    }
+    // Forward-fill every type's most recent known value on every row, not
+    // just the type that changed this iteration. This is what makes each
+    // line a correct step function instead of connectNulls drawing a
+    // diagonal guess across the gap between a type's sparse updates.
+    rows.push({ iteration: i, ...latestByType });
+  }
+  return rows;
+}
 
 export default function App() {
   // --- Navigation & Workflow State ---
@@ -57,6 +148,14 @@ export default function App() {
   const [expandedExplanation, setExpandedExplanation] = useState({});
   const [animatedFactorChange, setAnimatedFactorChange] = useState(null);
   const [activeRubricTab, setActiveRubricTab] = useState(1);
+
+  const [trialRunning, setTrialRunning] = useState(false);
+  const [trialPaused, setTrialPaused] = useState(false);
+  const [trialLog, setTrialLog] = useState([]); // [{iteration, task_type, predicted, actual, old_factor, new_factor, n_samples}]
+  const [trialFactors, setTrialFactors] = useState(null); // sandboxed copy of userFactors shape, or null when no trial has run
+  const [trialIterationTarget, setTrialIterationTarget] = useState(TRIAL_DEFAULT_ITERATIONS);
+  const [trialApplied, setTrialApplied] = useState(false); // true once "Apply to live demo" has been clicked for this run
+  const trialStopRef = useRef(false); // lets the skip-to-end control break out of the animation loop without stale-closure issues
 
   // Fonts Injection
   useEffect(() => {
@@ -396,6 +495,150 @@ export default function App() {
       showToast("Predicted timelines generated by custom ML models.");
     }, 900);
   };
+
+
+  function buildSeededTrialFactors() {
+    const seeded = {};
+    TRIAL_TASK_TYPES.forEach((type) => {
+      seeded[type] = {
+        rawFactor: 1.0,
+        factor: 1.0,
+        n_samples: 0,
+        label: (userFactors[type] && userFactors[type].label) || type,
+      };
+    });
+    return seeded;
+  }
+
+  // Pure, synchronous: given a starting factors object and an iteration range,
+  // returns { finalFactors, newLogEntries }. Used by both the animated
+  // step-by-step loop and the skip-to-end fast path, so there's exactly one
+  // place the update math lives.
+  function runTrialIterations(startFactors, fromIteration, toIteration) {
+    let factors = startFactors;
+    const entries = [];
+
+    for (let i = fromIteration; i < toIteration; i++) {
+      const taskType = TRIAL_TASK_TYPES[i % TRIAL_TASK_TYPES.length];
+      const entry = factors[taskType];
+      const { predicted, actual } = trialGenerateSyntheticCompletion(taskType);
+
+      const newRaw = trialUpdateRawFactor(entry.rawFactor, predicted, actual);
+      const newSamples = entry.n_samples + 1;
+      const newEffective = trialEffectiveFactor(newRaw, newSamples);
+
+      factors = {
+        ...factors,
+        [taskType]: { ...entry, rawFactor: newRaw, factor: newEffective, n_samples: newSamples },
+      };
+
+      entries.push({
+        iteration: i + 1,
+        task_type: taskType,
+        predicted,
+        actual,
+        old_factor: entry.factor,
+        new_factor: newEffective,
+        n_samples: newSamples,
+      });
+    }
+
+    return { finalFactors: factors, newLogEntries: entries };
+  }
+
+  function handleStartTrial() {
+    if (trialRunning) return;
+
+    const seeded = buildSeededTrialFactors();
+    setTrialFactors(seeded);
+    setTrialLog([]);
+    setTrialApplied(false);
+    setTrialRunning(true);
+    trialStopRef.current = false;
+
+    animateTrialStep(seeded, 0);
+  }
+
+  function animateTrialStep(currentFactors, iteration) {
+    if (iteration >= trialIterationTarget) {
+      setTrialRunning(false);
+      return;
+    }
+
+    if (trialStopRef.current) {
+      // Skip-to-end was requested: finish every remaining iteration in one
+      // synchronous pass instead of continuing the setTimeout chain.
+      const { finalFactors, newLogEntries } = runTrialIterations(
+        currentFactors,
+        iteration,
+        trialIterationTarget
+      );
+      setTrialFactors(finalFactors);
+      setTrialLog((prev) => [...prev, ...newLogEntries]);
+      if (newLogEntries.length > 0) {
+        const last = newLogEntries[newLogEntries.length - 1];
+        setAnimatedFactorChange({
+          taskType: last.task_type,
+          oldFactor: last.old_factor,
+          newFactor: last.new_factor,
+          n_samples: last.n_samples,
+        });
+      }
+      setTrialRunning(false);
+      return;
+    }
+
+    const { finalFactors, newLogEntries } = runTrialIterations(
+      currentFactors,
+      iteration,
+      iteration + 1
+    );
+    const step = newLogEntries[0];
+
+    setTrialFactors(finalFactors);
+    setTrialLog((prev) => [...prev, step]);
+
+    // Reuses the existing Step 4 "Active Learning Triggered" alert — same
+    // state field the live completion flow already drives, so this is free.
+    setAnimatedFactorChange({
+      taskType: step.task_type,
+      oldFactor: step.old_factor,
+      newFactor: step.new_factor,
+      n_samples: step.n_samples,
+    });
+
+    setTimeout(() => animateTrialStep(finalFactors, iteration + 1), TRIAL_STEP_DELAY_MS);
+  }
+
+  function handleSkipTrialToEnd() {
+    trialStopRef.current = true;
+  }
+
+  function handleResetTrial() {
+    trialStopRef.current = true;
+    setTrialRunning(false);
+    setTrialFactors(null);
+    setTrialLog([]);
+    setTrialApplied(false);
+  }
+
+  function handleApplyTrialToLive() {
+    if (!trialFactors) return;
+    setUserFactors((prev) => {
+      const merged = { ...prev };
+      TRIAL_TASK_TYPES.forEach((type) => {
+        merged[type] = {
+          ...prev[type],
+          factor: trialFactors[type].factor,
+          n_samples: trialFactors[type].n_samples,
+        };
+      });
+      return merged;
+    });
+    setTrialApplied(true);
+    showToast('Trial results applied to live demo multipliers.');
+  }
+
 
   // Completion & Active Model Loop
   const handleMarkTaskComplete = async () => {
@@ -1098,6 +1341,8 @@ export default function App() {
           {/* STEP 4: SELF-CORRECTING ADAPTATION LOOP (THE FLEX POINT) */}
           {/* ========================================================= */}
           {currentStep === 4 && (
+
+
             <div className="space-y-6">
               <div>
                 <div className="flex items-center gap-2">
@@ -1112,6 +1357,131 @@ export default function App() {
                   Unlike static study planners, FlowState AI compares its predictions against actual completion times logged by the student, updating personal speed multipliers over time.
                 </p>
               </div>
+
+
+              <div className="border border-[#D7D3C6] bg-[#FFFFFF] p-4 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <div className="font-['Fraunces',serif] font-semibold text-sm text-[#1C2420]">
+                      Trial Mode — Convergence Demo
+                    </div>
+                    <p className="text-[11px] text-[#5B6660] mt-0.5 max-w-md">
+                      Runs {trialIterationTarget} synthetic task completions against a sandboxed copy
+                      of your multipliers, so you can see the correction factor converge
+                      toward each task type's true pace instead of just asserting it.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {!trialRunning && !trialFactors && (
+                      <button
+                        onClick={handleStartTrial}
+                        className="bg-[#3D6B4A] text-white px-4 py-2 text-xs font-semibold hover:bg-[#2e5238] transition-colors flex items-center gap-1.5"
+                      >
+                        <Activity className="w-3.5 h-3.5" /> Run Trial Mode
+                      </button>
+                    )}
+
+                    {trialRunning && (
+                      <button
+                        onClick={handleSkipTrialToEnd}
+                        className="bg-[#2B5BA6] text-white px-4 py-2 text-xs font-semibold hover:bg-[#204682] transition-colors flex items-center gap-1.5"
+                      >
+                        Skip to End
+                      </button>
+                    )}
+
+                    {!trialRunning && trialFactors && (
+                      <>
+                        <button
+                          onClick={handleResetTrial}
+                          className="text-[#5B6660] hover:text-[#B5491F] text-xs font-medium px-3 py-2"
+                        >
+                          Reset Trial
+                        </button>
+                        <button
+                          onClick={handleApplyTrialToLive}
+                          disabled={trialApplied}
+                          className="bg-[#2B5BA6] text-white px-4 py-2 text-xs font-semibold hover:bg-[#204682] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {trialApplied ? 'Applied to Live Demo ✓' : 'Apply Trial Results to Live Demo'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Iteration count control -- only editable before a run starts */}
+                {!trialRunning && !trialFactors && (
+                  <div className="flex items-center gap-2 text-[11px] text-[#5B6660]">
+                    <label>Iterations:</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="60"
+                      value={trialIterationTarget}
+                      onChange={(e) => setTrialIterationTarget(parseInt(e.target.value, 10) || TRIAL_DEFAULT_ITERATIONS)}
+                      className="w-16 bg-[#F3F1EA] border border-[#D7D3C6] px-2 py-1 font-mono text-xs text-[#1C2420] focus:outline-none focus:border-[#2B5BA6]"
+                    />
+                  </div>
+                )}
+
+                {/* Chart -- only once the trial has produced at least one log entry */}
+                {trialLog.length > 0 && (
+                  <div className="pt-2">
+                    <ResponsiveContainer width="100%" height={280}>
+                      <LineChart data={buildChartData(trialLog)} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#D7D3C6" />
+                        <XAxis
+                          dataKey="iteration"
+                          stroke="#5B6660"
+                          tick={{ fontSize: 11, fontFamily: 'monospace' }}
+                          label={{ value: 'Iteration', position: 'insideBottom', offset: -3, fontSize: 11 }}
+                        />
+                        <YAxis
+                          stroke="#5B6660"
+                          tick={{ fontSize: 11, fontFamily: 'monospace' }}
+                          domain={[0.3, 2.6]}
+                          label={{ value: 'Correction Factor', angle: -90, position: 'insideLeft', fontSize: 11 }}
+                        />
+                        <Tooltip
+                          contentStyle={{ fontSize: 11, fontFamily: 'monospace', border: '1px solid #D7D3C6' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+
+                        {TRIAL_TASK_TYPES.map((type) => (
+                          <Line
+                            key={type}
+                            type="monotone"
+                            dataKey={type}
+                            stroke={TRIAL_TYPE_COLORS[type]}
+                            strokeWidth={2}
+                            dot={{ r: 2 }}
+                            name={type}
+                          />
+                        ))}
+
+                        {/* Dashed reference line per type's secret true factor -- this is
+                            the actual payoff: showing the line converge TOWARD it. */}
+                        {TRIAL_TASK_TYPES.map((type) => (
+                          <ReferenceLine
+                            key={`ref-${type}`}
+                            y={TRIAL_TRUE_FACTORS[type]}
+                            stroke={TRIAL_TYPE_COLORS[type]}
+                            strokeDasharray="4 4"
+                            strokeOpacity={0.5}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                    <p className="text-[10px] text-[#5B6660] font-mono mt-1">
+                      Dashed lines mark each task type's true underlying pace for this synthetic
+                      student — solid lines show the model's learned factor converging toward it.
+                    </p>
+                  </div>
+                )}
+              </div>
+
 
               {/* Animated Adaptation Alert */}
               {animatedFactorChange && (
