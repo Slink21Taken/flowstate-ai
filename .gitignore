@@ -7,7 +7,6 @@ venv/
 dist/
 build/
 fee_signed.py
-see
 out/
 duckdb_temp/
 fee_sentinel_out/

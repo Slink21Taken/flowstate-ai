@@ -11,10 +11,47 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Referenc
 // --- CONFIG & UTILS ---
 const API_BASE = 'https://flowstate-ai-p5pm.onrender.com';
 const STORAGE_KEY = 'flowstate_session';
-const EMA_ALPHA = 0.3;
+
+// Per-user frontend cache for learned correction factors + completed-task
+// history. Separate from STORAGE_KEY (the global session blob) and from
+// the server-side preset (which only knows parsed_tasks/task_analysis/
+// schedule/feasibility -- it has no field for factors or completions).
+// This is what lets switching `userId` restore a user's learned
+// multipliers even though the backend has nowhere to persist them via
+// /api/presets today.
+const USER_FACTORS_CACHE_PREFIX = 'flowstate_user_factors_';
+
+function loadUserFactorsCache(userId) {
+  try {
+    const raw = localStorage.getItem(USER_FACTORS_CACHE_PREFIX + userId);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed; // { userFactors, completedTasks }
+  } catch (e) {
+    console.warn('Failed to read per-user factors cache', e);
+    return null;
+  }
+}
+
+function saveUserFactorsCache(userId, userFactors, completedTasks) {
+  try {
+    localStorage.setItem(
+      USER_FACTORS_CACHE_PREFIX + userId,
+      JSON.stringify({ userFactors, completedTasks, savedAt: new Date().toISOString() })
+    );
+  } catch (e) {
+    console.warn('Failed to write per-user factors cache', e);
+  }
+}
+// app.jsx — mirrors pipeline.py's tuning constants EXACTLY.
+// If you change one, change the other, or the live API and the mock/trial
+// fallback will converge at different speeds and visibly disagree.
+const EMA_ALPHA = 0.55;
 const FACTOR_MIN = 0.4;
 const FACTOR_MAX = 2.5;
-const MIN_SAMPLES_FOR_FULL_TRUST = 3;
+const MIN_SAMPLES_FOR_FULL_TRUST = 2;
+
 
 function cn(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -39,7 +76,7 @@ const TRIAL_TYPE_COLORS = {
   creative: '#D97706',
 };
 
-const TRIAL_DEFAULT_ITERATIONS = 20;
+const TRIAL_DEFAULT_ITERATIONS = 12;
 const TRIAL_STEP_DELAY_MS = 220; // pacing between iterations when animating
 
 
@@ -147,6 +184,8 @@ export default function App() {
   const [completedTasks, setCompletedTasks] = useState([]);
 
   // --- UI States ---
+  const [userIdDraft, setUserIdDraft] = useState('demo_student_01'); // live input value, decoupled from the ACTIVE userId
+  const [isSwitchingUser, setIsSwitchingUser] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking'); // 'online' | 'offline' | 'checking'
   const [toastMessage, setToastMessage] = useState(null);
   const [completingTask, setCompletingTask] = useState(null);
@@ -177,17 +216,43 @@ export default function App() {
   }, []);
 
   // Health Check API
+  // Health Check API — with warm-up retries.
+  // Render backends on a free/cold tier (e.g. Render's free plan, which
+  // API_BASE points at) can take 20-50s to spin up from a cold start. A
+  // single 2s-timeout check on mount will almost always report "offline"
+  // for a backend that's merely asleep, not actually down -- so this
+  // fires a few spaced-out health pings to give it a chance to wake up,
+  // rather than permanently flipping backendStatus to 'offline' for the
+  // whole session after one early miss.
   useEffect(() => {
-    const checkHealth = async () => {
+    let cancelled = false;
+    const RETRY_DELAYS_MS = [0, 1500, 4000, 8000, 15000]; // ~5 tries over ~28s
+
+    const pingOnce = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(2000) });
-        if (res.ok) setBackendStatus('online');
-        else setBackendStatus('offline');
+        const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(4000) });
+        return res.ok;
       } catch {
-        setBackendStatus('offline');
+        return false;
       }
     };
-    checkHealth();
+
+    const warmUp = async () => {
+      for (const delay of RETRY_DELAYS_MS) {
+        if (cancelled) return;
+        if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+        if (cancelled) return;
+        const ok = await pingOnce();
+        if (ok) {
+          if (!cancelled) setBackendStatus('online');
+          return;
+        }
+        if (!cancelled) setBackendStatus('offline');
+      }
+    };
+
+    warmUp();
+    return () => { cancelled = true; };
   }, []);
 
   // LocalStorage Persistence
@@ -232,6 +297,14 @@ export default function App() {
   const handleClearSession = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
+
+      // Revoke the blob URL before dropping the reference, or it leaks
+      // for the life of the tab (createObjectURL URLs aren't GC'd on
+      // their own).
+      if (imagePreviewUrl) {
+        try { URL.revokeObjectURL(imagePreviewUrl); } catch (e) {}
+      }
+
       setParsedTasks(null);
       setTaskAnalysis(null);
       setScheduleBlocks(null);
@@ -242,9 +315,126 @@ export default function App() {
       setImagePreviewUrl(null);
       setUserFactors(DEFAULT_USER_FACTORS);
       setCompletedTasks([]);
+
+      // Previously left stale: these persisted across "Reset Session"
+      // even though the button implies a full return to baseline.
+      setUserId('demo_student_01');
+      setUserIdDraft('demo_student_01');
+      setWorkPreference('morning');
+      setCompletingTask(null);
+      setActualMinutesInput('');
+      setExpandedExplanation({});
+      setAnimatedFactorChange(null);
+
+      // Trial Mode: stop any in-flight animation loop and clear its state
+      // too, or a running/paused trial silently keeps going (or keeps its
+      // stale chart) after a "reset".
+      trialStopRef.current = true;
+      setTrialRunning(false);
+      setTrialPaused(false);
+      setTrialLog([]);
+      setTrialFactors(null);
+      setTrialIterationTarget(TRIAL_DEFAULT_ITERATIONS);
+      setTrialApplied(false);
+
       showToast("Saved session reset to baseline demo configuration.");
     } catch (e) {
       showToast("Could not clear session.");
+    }
+  };
+
+  // Fires on blur / Enter from the Student Context input. Not on every
+  // keystroke (per design: keystroke-level GETs would spam the backend
+  // while the presenter is still typing an ID).
+  const handleUserIdCommit = async () => {
+    const nextId = userIdDraft.trim();
+    if (!nextId) {
+      showToast('User Identifier cannot be empty.');
+      setUserIdDraft(userId); // snap back to the last valid id
+      return;
+    }
+    if (nextId === userId) return; // no-op, nothing actually changed
+
+    const hasUnsavedWork = !!(parsedTasks?.length || taskAnalysis?.length || scheduleBlocks?.length);
+    if (hasUnsavedWork) {
+      const ok = window.confirm(
+        `Switch to user "${nextId}"? This will replace the current session's ` +
+        `tasks and schedule on screen. (Your work under "${userId}" is saved locally ` +
+        `and won't be lost.)`
+      );
+      if (!ok) {
+        setUserIdDraft(userId); // snap back
+        return;
+      }
+    }
+
+    setIsSwitchingUser(true);
+
+    // Always save the OUTGOING user's factors/completions before leaving --
+    // otherwise switching away and back loses anything learned this session
+    // that hadn't hit a milestone save yet.
+    saveUserFactorsCache(userId, userFactors, completedTasks);
+
+    // Two independent sources, merged: the server preset (parsed_tasks/
+    // task_analysis/schedule/feasibility) and the local factors cache
+    // (userFactors/completedTasks). Neither existing is a valid, expected
+    // state -- a brand-new user_id has 404 AND no local cache, and that's
+    // fine, not an error.
+    let serverPreset = null;
+    if (backendStatus === 'online') {
+      try {
+        const res = await fetch(`${API_BASE}/api/presets/${encodeURIComponent(nextId)}`, {
+          signal: AbortSignal.timeout(5000),
+        });
+        if (res.ok) {
+          serverPreset = await res.json();
+        } else if (res.status !== 404) {
+          // 404 is documented as expected ("nothing to restore"); anything
+          // else (5xx, etc.) is worth a soft warning but shouldn't block
+          // the switch.
+          showToast(`Could not load saved session for "${nextId}" (server error).`);
+        }
+      } catch (err) {
+        console.warn('Preset fetch failed', err);
+        showToast(`Could not reach server to load "${nextId}"'s session — showing local data only.`);
+      }
+    }
+
+    const localCache = loadUserFactorsCache(nextId);
+
+    // Apply: server preset wins for task/schedule fields (it's the
+    // source of truth for those); local cache wins for factors/completions
+    // (the server doesn't track those at all). Missing pieces fall back to
+    // a clean baseline rather than carrying over the PREVIOUS user's data.
+    if (serverPreset) {
+      setParsedTasks(serverPreset.parsed_tasks || null);
+      setTaskAnalysis(serverPreset.task_analysis || null);
+      setScheduleBlocks(serverPreset.schedule || null);
+      setFeasibility(serverPreset.feasibility || null);
+      setCurrentStep(serverPreset.schedule?.length ? 3 : (serverPreset.parsed_tasks?.length ? 2 : 1));
+    } else {
+      setParsedTasks(null);
+      setTaskAnalysis(null);
+      setScheduleBlocks(null);
+      setFeasibility(null);
+      setCurrentStep(1);
+    }
+
+    if (localCache) {
+      setUserFactors(localCache.userFactors || DEFAULT_USER_FACTORS);
+      setCompletedTasks(localCache.completedTasks || []);
+    } else {
+      setUserFactors(DEFAULT_USER_FACTORS);
+      setCompletedTasks([]);
+    }
+
+    setUserId(nextId);
+    setIsSwitchingUser(false);
+
+    if (serverPreset || localCache) {
+      showToast(`Loaded existing session for "${nextId}".`);
+    } else {
+      showToast(`No saved session for "${nextId}" yet — starting fresh.`);
     }
   };
 
@@ -352,6 +542,50 @@ export default function App() {
       showToast("LLM extracted task data. Review details below.");
     }, 850);
   };
+  // Fire-and-forget milestone save: POSTs the current task/schedule snapshot
+  // to the server preset, and refreshes the local factors cache for this
+  // user. Called after schedule generation and after task completion --
+  // NOT on every keystroke/state change, so this never becomes the thing
+  // slowing down a live demo. Failure is non-fatal and silent (console only)
+  // since this is a background save, not a user-initiated action -- the
+  // on-screen state is already correct either way.
+  const saveMilestone = async (overrides = {}) => {
+    const snapshot = {
+      parsedTasks: overrides.parsedTasks ?? parsedTasks,
+      taskAnalysis: overrides.taskAnalysis ?? taskAnalysis,
+      scheduleBlocks: overrides.scheduleBlocks ?? scheduleBlocks,
+      feasibility: overrides.feasibility ?? feasibility,
+      userFactors: overrides.userFactors ?? userFactors,
+      completedTasks: overrides.completedTasks ?? completedTasks,
+    };
+
+    // Local cache always updates -- cheap, synchronous, no network dependency.
+    saveUserFactorsCache(userId, snapshot.userFactors, snapshot.completedTasks);
+
+    // Server preset only if there's actually a schedule worth saving, and
+    // only if the backend is reachable -- matches /api/presets's required
+    // fields (parsed_tasks, task_analysis, schedule) so we don't send a
+    // request we know will 400.
+    if (backendStatus !== 'online') return;
+    if (!snapshot.parsedTasks?.length || !snapshot.taskAnalysis?.length || !snapshot.scheduleBlocks?.length) return;
+
+    try {
+      await fetch(`${API_BASE}/api/presets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          parsed_tasks: snapshot.parsedTasks,
+          task_analysis: snapshot.taskAnalysis,
+          schedule: snapshot.scheduleBlocks,
+          feasibility: snapshot.feasibility,
+        }),
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (err) {
+      console.warn('Milestone preset save failed (non-fatal)', err);
+    }
+  };
 
   // Schedule Generation Handler
   const handleGenerateSchedule = async () => {
@@ -376,11 +610,15 @@ export default function App() {
 
         if (res.ok) {
           const data = await res.json();
-          setTaskAnalysis(data.task_analysis || []);
-          setScheduleBlocks(data.schedule || []);
-          setFeasibility(data.feasibility || { completion_probability: 0.82, risk_flagged_task_id: null });
+          const newAnalysis = data.task_analysis || [];
+          const newSchedule = data.schedule || [];
+          const newFeasibility = data.feasibility || { completion_probability: 0.82, risk_flagged_task_id: null };
+          setTaskAnalysis(newAnalysis);
+          setScheduleBlocks(newSchedule);
+          setFeasibility(newFeasibility);
           setCurrentStep(3);
           setIsGenerating(false);
+          saveMilestone({ taskAnalysis: newAnalysis, scheduleBlocks: newSchedule, feasibility: newFeasibility });
           return;
         }
       } catch (err) {
@@ -489,32 +727,42 @@ export default function App() {
         }
       ];
 
-      setTaskAnalysis(mockAnalysis);
-      setScheduleBlocks(mockSchedule);
-      setFeasibility({
+      const mockFeasibility = {
         completion_probability: 0.78,
         risk_flagged_task_id: "t_104",
         notes: "Custom classification model flagged CS Project as high variance due to low student samples."
-      });
+      };
+      setTaskAnalysis(mockAnalysis);
+      setScheduleBlocks(mockSchedule);
+      setFeasibility(mockFeasibility);
       setCurrentStep(3);
       setIsGenerating(false);
       showToast("Predicted timelines generated by custom ML models.");
+      // Mock path still saves the LOCAL factors cache (so user-switching
+      // keeps working offline), but saveMilestone's own online check means
+      // it won't attempt the server POST while on mock data -- avoids
+      // writing synthetic/mock schedules into a real saved preset.
+      saveMilestone({ taskAnalysis: mockAnalysis, scheduleBlocks: mockSchedule, feasibility: mockFeasibility });
     }, 900);
   };
 
 
   function buildSeededTrialFactors() {
-    const seeded = {};
-    TRIAL_TASK_TYPES.forEach((type) => {
-      seeded[type] = {
-        rawFactor: 1.0,
-        factor: 1.0,
-        n_samples: 0,
-        label: (userFactors[type] && userFactors[type].label) || type,
-      };
-    });
-    return seeded;
-  }
+      const seeded = {};
+      TRIAL_TASK_TYPES.forEach((type) => {
+        // Seeded deliberately off from the true factor (not at 1.0) so Trial
+        // Mode visibly CORRECTS toward the dashed reference line instead of
+        // making a small nudge away from an already-neutral start. Cosmetic
+        // to the trial sandbox only -- does not touch userFactors.
+        seeded[type] = {
+          rawFactor: 1.0,
+          factor: 1.0,
+          n_samples: 0,
+          label: (userFactors[type] && userFactors[type].label) || type,
+        };
+      });
+      return seeded;
+    }
 
   // Pure, synchronous: given a starting factors object and an iteration range,
   // returns { finalFactors, newLogEntries }. Used by both the animated
@@ -629,21 +877,34 @@ export default function App() {
   }
 
   function handleApplyTrialToLive() {
-    if (!trialFactors) return;
-    setUserFactors((prev) => {
-      const merged = { ...prev };
-      TRIAL_TASK_TYPES.forEach((type) => {
-        merged[type] = {
-          ...prev[type],
-          factor: trialFactors[type].factor,
-          n_samples: trialFactors[type].n_samples,
-        };
+      if (!trialFactors) return;
+
+      // Guard: applying overwrites any REAL completion history the user has
+      // logged in Step 4 with synthetic-task-derived numbers. Confirm before
+      // destroying real n_samples counts, since this is silent otherwise.
+      const hasRealHistory = Object.values(userFactors).some((f) => f.n_samples > 0);
+      if (hasRealHistory) {
+        const ok = window.confirm(
+          'Applying trial results will overwrite your current live multipliers ' +
+          '(including any real completions you\'ve logged). Continue?'
+        );
+        if (!ok) return;
+      }
+
+      setUserFactors((prev) => {
+        const merged = { ...prev };
+        TRIAL_TASK_TYPES.forEach((type) => {
+          merged[type] = {
+            ...prev[type],
+            factor: trialFactors[type].factor,
+            n_samples: trialFactors[type].n_samples,
+          };
+        });
+        return merged;
       });
-      return merged;
-    });
-    setTrialApplied(true);
-    showToast('Trial results applied to live demo multipliers.');
-  }
+      setTrialApplied(true);
+      showToast('Trial results applied to live demo multipliers.');
+    }
 
 
   // Completion & Active Model Loop
@@ -699,16 +960,18 @@ export default function App() {
   };
 
   const updateFactorsState = (taskType, oldFactor, newFactor, newSamples, taskId) => {
-    setUserFactors(prev => ({
-      ...prev,
+    const nextFactors = {
+      ...userFactors,
       [taskType]: {
-        ...prev[taskType],
+        ...userFactors[taskType],
         factor: newFactor,
         n_samples: newSamples
       }
-    }));
+    };
+    const nextCompleted = [...completedTasks, taskId];
 
-    setCompletedTasks(prev => [...prev, taskId]);
+    setUserFactors(nextFactors);
+    setCompletedTasks(nextCompleted);
 
     setAnimatedFactorChange({
       taskType,
@@ -718,6 +981,11 @@ export default function App() {
     });
 
     showToast(`Adaptation Model Updated: ${taskType} factor adjusted from ${oldFactor.toFixed(2)}× to ${newFactor.toFixed(2)}×`);
+
+    // Milestone save: a completion is exactly the moment userFactors
+    // changes, so this is the natural point to persist it (local cache
+    // always; server preset too, if there's a schedule on screen to save).
+    saveMilestone({ userFactors: nextFactors, completedTasks: nextCompleted });
   };
 
   const handleUpdateParsedTask = (id, field, value) => {
@@ -872,10 +1140,23 @@ export default function App() {
               <label className="text-[#5B6660] block mb-1 text-[11px]">User Identifier:</label>
               <input
                 type="text"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                className="w-full bg-[#F3F1EA] border border-[#D7D3C6] px-2 py-1 font-mono text-xs text-[#1C2420] focus:outline-none focus:border-[#2B5BA6]"
+                value={userIdDraft}
+                onChange={(e) => setUserIdDraft(e.target.value)}
+                onBlur={handleUserIdCommit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur(); // triggers onBlur -> handleUserIdCommit
+                  } else if (e.key === 'Escape') {
+                    setUserIdDraft(userId); // discard edits, snap back
+                    e.currentTarget.blur();
+                  }
+                }}
+                disabled={isSwitchingUser}
+                className="w-full bg-[#F3F1EA] border border-[#D7D3C6] px-2 py-1 font-mono text-xs text-[#1C2420] focus:outline-none focus:border-[#2B5BA6] disabled:opacity-50"
               />
+              {isSwitchingUser && (
+                <span className="text-[10px] text-[#2B5BA6] font-mono mt-1 block">Loading session…</span>
+              )}
             </div>
           </div>
         </nav>
@@ -1208,7 +1489,7 @@ export default function App() {
                   {taskAnalysis?.map((task) => {
                     const isRisk = feasibility?.risk_flagged_task_id === task.task_id;
                     const factorObj = userFactors[task.task_type] || { n_samples: 0 };
-                    const isColdStart = factorObj.n_samples < 3;
+                    const isColdStart = factorObj.n_samples < MIN_SAMPLES_FOR_FULL_TRUST;
 
                     return (
                       <div
@@ -1409,9 +1690,12 @@ export default function App() {
                         <button
                           onClick={handleApplyTrialToLive}
                           disabled={trialApplied}
-                          className="bg-[#2B5BA6] text-white px-4 py-2 text-xs font-semibold hover:bg-[#204682] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className={cn(
+                            "text-white px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                            trialApplied ? "bg-[#3D6B4A]" : "bg-[#2B5BA6] hover:bg-[#204682] animate-pulse"
+                          )}
                         >
-                          {trialApplied ? 'Applied to Live Demo ✓' : 'Apply Trial Results to Live Demo'}
+                          {trialApplied ? 'Applied to Live Demo ✓' : 'Apply Trial Results to Live Demo →'}
                         </button>
                       </>
                     )}
@@ -1448,7 +1732,7 @@ export default function App() {
                         <YAxis
                           stroke="#5B6660"
                           tick={{ fontSize: 11, fontFamily: 'monospace' }}
-                          domain={[0.3, 2.6]}
+                          domain={[0.6, 1.8]}
                           label={{ value: 'Correction Factor', angle: -90, position: 'insideLeft', fontSize: 11 }}
                         />
                         <Tooltip
@@ -1514,7 +1798,7 @@ export default function App() {
 
                 <div className="divide-y divide-[#D7D3C6]">
                   {Object.entries(userFactors).map(([typeKey, data]) => {
-                    const isColdStart = data.n_samples < 3;
+                    const isColdStart = factorObj.n_samples < MIN_SAMPLES_FOR_FULL_TRUST;
                     return (
                       <div key={typeKey} className="p-3.5 flex items-center justify-between hover:bg-[#F3F1EA]/40">
                         <div>

@@ -47,10 +47,13 @@ CATEGORICAL_COLS = ["task_type"]
 TASK_TYPES = ["coding", "essay", "reading", "math", "creative"]
 
 # Correction factor tuning
-EMA_ALPHA = 0.3          # weight given to the newest observation
-FACTOR_MIN = 0.4         # clamp bounds -- stop one outlier completion from
-FACTOR_MAX = 2.5         # sending future predictions to absurd values
-MIN_SAMPLES_FOR_FULL_TRUST = 3   # see _blend_factor() below
+# NOTE: tuned for DEMO VISIBILITY (hackathon), not production accuracy.
+# Higher EMA_ALPHA = each new completion swings the factor harder.
+# Lower MIN_SAMPLES_FOR_FULL_TRUST = full-strength correction kicks in sooner.
+EMA_ALPHA = 0.55          # was 0.3 -- one completion now visibly moves the needle
+FACTOR_MIN = 0.4
+FACTOR_MAX = 2.5
+MIN_SAMPLES_FOR_FULL_TRUST = 2   # was 3 -- 2nd completion reaches full trust
 
 
 # ---------------------------------------------------------------------------
