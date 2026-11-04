@@ -6,3 +6,11 @@ venv/
 .DS_Store
 dist/
 build/
+fee_signed.py
+see
+out/
+duckdb_temp/
+fee_sentinel_out/
+.hf_cache/
+catboost_info/
+.pytest_cache/
