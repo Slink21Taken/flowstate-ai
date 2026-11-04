@@ -1798,7 +1798,7 @@ export default function App() {
 
                 <div className="divide-y divide-[#D7D3C6]">
                   {Object.entries(userFactors).map(([typeKey, data]) => {
-                    const isColdStart = factorObj.n_samples < MIN_SAMPLES_FOR_FULL_TRUST;
+                    const isColdStart = data.n_samples < MIN_SAMPLES_FOR_FULL_TRUST;
                     return (
                       <div key={typeKey} className="p-3.5 flex items-center justify-between hover:bg-[#F3F1EA]/40">
                         <div>
